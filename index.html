@@ -56,16 +56,16 @@ function cast(angle){
 }
 function render(){
  ctx.fillStyle="#79b7e8";ctx.fillRect(0,0,W,H);
- // Keep the ground horizon fixed. Camera height moves the projected wall
- // downward by an amount proportional to its distance, keeping the wall rigid.
- const horizon=H/2;
+ // Camera height shifts the horizon down. The floor and wall bases share
+ // the same projected ground line, so the walls remain rigid while jumping.
+ const horizon=H/2+p.z*H*.18;
  ctx.fillStyle="#303030";
  ctx.fillRect(0,horizon,W,H-horizon);
  const rays=Math.min(NUM_RAYS,W),step=W/rays;
  for(let i=0;i<rays;i++){
   const a=p.a-FOV/2+(i/(rays-1))*FOV,hit=cast(a),corrected=hit.dist*Math.cos(a-p.a);
   const wallH=Math.min(H*3,H/(corrected*1.05));
-  const bottom=horizon+p.z*wallH;
+  const bottom=horizon;
   const top=bottom-wallH;
   ctx.fillStyle=hit.side?"#a8a8a8":"#c8c8c8";
   ctx.fillRect(i*step,top,step+1,bottom-top);
