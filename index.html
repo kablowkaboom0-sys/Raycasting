@@ -55,11 +55,11 @@ function cast(angle){
  return{dist:Math.max(.001,dist),side}
 }
 function render(){
- // Fill the entire frame first so jumping can never expose transparent/unpainted areas.
  ctx.fillStyle="#79b7e8";ctx.fillRect(0,0,W,H);
- // Ground is placed below the horizon. The horizon itself moves with player height.
- const horizon=H/2-p.z*H*.18;
- ctx.fillStyle="#303030";ctx.fillRect(0,horizon,W,H-horizon);
+ // Raising the camera makes the world move downward on screen.
+ const horizon=H/2+p.z*H*.18;
+ ctx.fillStyle="#303030";
+ ctx.fillRect(0,horizon,W,H-horizon);
  const rays=Math.min(NUM_RAYS,W),step=W/rays;
  for(let i=0;i<rays;i++){
   const a=p.a-FOV/2+(i/(rays-1))*FOV,hit=cast(a),corrected=hit.dist*Math.cos(a-p.a);
@@ -86,15 +86,8 @@ joy.addEventListener("pointerup",endJoy);joy.addEventListener("pointercancel",en
 
 const look=document.getElementById("look");
 let lookId=null,lastLookX=0;
-look.addEventListener("pointerdown",e=>{
- if(e.target===document.getElementById("jump"))return;
- lookId=e.pointerId;lastLookX=e.clientX;look.setPointerCapture(lookId);e.preventDefault();
-});
-look.addEventListener("pointermove",e=>{
- if(e.pointerId!==lookId)return;
- const dx=e.clientX-lastLookX;lastLookX=e.clientX;
- p.a+=dx*0.008;e.preventDefault();
-});
+look.addEventListener("pointerdown",e=>{lookId=e.pointerId;lastLookX=e.clientX;look.setPointerCapture(lookId);e.preventDefault()});
+look.addEventListener("pointermove",e=>{if(e.pointerId!==lookId)return;const dx=e.clientX-lastLookX;lastLookX=e.clientX;p.a+=dx*.008;e.preventDefault()});
 function endLook(e){if(e.pointerId===lookId)lookId=null}
 look.addEventListener("pointerup",endLook);look.addEventListener("pointercancel",endLook);
 
