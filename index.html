@@ -7,11 +7,12 @@
 <style>
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#111;font-family:Arial,sans-serif;touch-action:none}
 canvas{display:block;width:100%;height:100%;image-rendering:auto}
-#hud{position:fixed;top:12px;left:12px;color:#fff;background:#0009;padding:9px 12px;border-radius:8px;font:14px monospace;line-height:1.45;pointer-events:none}
-#help{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);color:#fff;background:#0009;padding:8px 12px;border-radius:8px;font:13px Arial;text-align:center;pointer-events:none}
+#hud{position:fixed;top:12px;left:12px;color:#fff;background:#0009;padding:9px 12px;border-radius:8px;font:14px monospace;line-height:1.45;pointer-events:none;z-index:10}
+#help{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);color:#fff;background:#0009;padding:8px 12px;border-radius:8px;font:13px Arial;text-align:center;pointer-events:none;z-index:10}
 #joystick{position:fixed;left:28px;bottom:35px;width:120px;height:120px;border:3px solid #ffffff66;border-radius:50%;background:#ffffff18;z-index:5;touch-action:none}
 #stick{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px;border-radius:50%;background:#ffffff66;border:2px solid #fff9;box-sizing:border-box}
-#jump{position:fixed;right:32px;bottom:55px;width:82px;height:82px;border-radius:50%;border:2px solid #fff9;background:#ffffff2b;color:white;font:bold 15px Arial;z-index:5;touch-action:none}
+#look{position:fixed;right:0;top:0;width:50%;height:100%;z-index:3;touch-action:none}
+#jump{position:fixed;right:32px;bottom:55px;width:82px;height:82px;border-radius:50%;border:2px solid #fff9;background:#ffffff2b;color:white;font:bold 15px Arial;z-index:6;touch-action:none}
 @media (min-width:700px){#joystick,#jump{opacity:.45}}
 </style>
 </head>
@@ -20,12 +21,13 @@ canvas{display:block;width:100%;height:100%;image-rendering:auto}
 <div id="hud"></div>
 <div id="help">WASD / Arrow keys: move | Space: jump | Shift: sprint | Q/E: turn</div>
 <div id="joystick"><div id="stick"></div></div>
+<div id="look"></div>
 <button id="jump">JUMP</button>
 <script>
 "use strict";
 const canvas=document.getElementById("view"),ctx=canvas.getContext("2d"),hud=document.getElementById("hud");
 let W=0,H=0;
-function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight} addEventListener("resize",resize);resize();
+function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight}addEventListener("resize",resize);resize();
 
 const map=[
 "1111111111111111","1000000000000001","1000000000000001",
@@ -53,11 +55,19 @@ function cast(angle){
  return{dist:Math.max(.001,dist),side}
 }
 function render(){
- ctx.fillStyle="#79b7e8";ctx.fillRect(0,0,W,H/2);ctx.fillStyle="#303030";ctx.fillRect(0,H/2,W,H/2);
+ // Fill the entire frame first so jumping can never expose transparent/unpainted areas.
+ ctx.fillStyle="#79b7e8";ctx.fillRect(0,0,W,H);
+ // Ground is placed below the horizon. The horizon itself moves with player height.
+ const horizon=H/2-p.z*H*.18;
+ ctx.fillStyle="#303030";ctx.fillRect(0,horizon,W,H-horizon);
  const rays=Math.min(NUM_RAYS,W),step=W/rays;
- for(let i=0;i<rays;i++){const a=p.a-FOV/2+(i/(rays-1))*FOV,hit=cast(a),corrected=hit.dist*Math.cos(a-p.a);
-  const wallH=Math.min(H*2,H/(corrected*1.05)),top=H/2-wallH/2-p.z*H*.18;
-  ctx.fillStyle=hit.side?"#a8a8a8":"#c8c8c8";ctx.fillRect(i*step,top,step+1,wallH)}
+ for(let i=0;i<rays;i++){
+  const a=p.a-FOV/2+(i/(rays-1))*FOV,hit=cast(a),corrected=hit.dist*Math.cos(a-p.a);
+  const wallH=Math.min(H*3,H/(corrected*1.05));
+  const top=horizon-wallH/2;
+  ctx.fillStyle=hit.side?"#a8a8a8":"#c8c8c8";
+  ctx.fillRect(i*step,top,step+1,wallH);
+ }
  ctx.strokeStyle="#fff8";ctx.beginPath();ctx.moveTo(W/2-7,H/2);ctx.lineTo(W/2+7,H/2);ctx.moveTo(W/2,H/2-7);ctx.lineTo(W/2,H/2+7);ctx.stroke();
 }
 
@@ -73,6 +83,21 @@ joy.addEventListener("pointerdown",e=>{joyId=e.pointerId;joy.setPointerCapture(j
 joy.addEventListener("pointermove",e=>{if(e.pointerId===joyId)updateJoy(e);e.preventDefault()});
 function endJoy(e){if(e.pointerId===joyId){joyId=null;joyX=joyY=0;stick.style.transform="translate(0,0)"}}
 joy.addEventListener("pointerup",endJoy);joy.addEventListener("pointercancel",endJoy);
+
+const look=document.getElementById("look");
+let lookId=null,lastLookX=0;
+look.addEventListener("pointerdown",e=>{
+ if(e.target===document.getElementById("jump"))return;
+ lookId=e.pointerId;lastLookX=e.clientX;look.setPointerCapture(lookId);e.preventDefault();
+});
+look.addEventListener("pointermove",e=>{
+ if(e.pointerId!==lookId)return;
+ const dx=e.clientX-lastLookX;lastLookX=e.clientX;
+ p.a+=dx*0.008;e.preventDefault();
+});
+function endLook(e){if(e.pointerId===lookId)lookId=null}
+look.addEventListener("pointerup",endLook);look.addEventListener("pointercancel",endLook);
+
 const jump=document.getElementById("jump");
 jump.addEventListener("pointerdown",e=>{keys.Space=true;e.preventDefault()});
 jump.addEventListener("pointerup",e=>{keys.Space=false;e.preventDefault()});
@@ -81,10 +106,10 @@ jump.addEventListener("pointercancel",e=>keys.Space=false);
 let last=performance.now();
 function loop(now){
  const dt=Math.min(.033,(now-last)/1000);last=now;
- let turn=0;if(keys.KeyQ)turn-=1;if(keys.KeyE||keys.ArrowRight)turn+=1;p.a+=turn*2.2*dt;
+ let turn=0;if(keys.KeyQ||keys.ArrowLeft)turn-=1;if(keys.KeyE||keys.ArrowRight)turn+=1;p.a+=turn*2.2*dt;
  let f=0,s=0;
  if(keys.KeyW||keys.ArrowUp)f++;if(keys.KeyS||keys.ArrowDown)f--;
- if(keys.KeyA||keys.ArrowLeft)s--;if(keys.KeyD)s++;
+ if(keys.KeyA)s--;if(keys.KeyD)s++;
  if(Math.abs(joyY)>.08)f=-joyY;if(Math.abs(joyX)>.08)s=joyX;
  const len=Math.hypot(f,s)||1;f/=len;s/=len;
  const speed=(keys.ShiftLeft||keys.ShiftRight)?4.2:2.7;
