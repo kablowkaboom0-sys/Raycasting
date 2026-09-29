@@ -30,14 +30,30 @@ let W=0,H=0;
 function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight}addEventListener("resize",resize);resize();
 
 const map=[
-"1111111111111111","1000000000000001","1000000000000001",
-"1000111111000001","1000100001000001","1000100001000001",
-"1000100001000001","1000100001000001","1000000001000001",
-"1000000001000001","1000001111000001","1000000000000001",
-"1000000000000001","1000000000000001","1000000000000001",
-"1111111111111111"];
+"111111111111111111111111",
+"100000000000000000000001",
+"100000000000000000000001",
+"100000000000000000000001",
+"100000000000000000000001",
+"100000000000000000000001",
+"100000000000000000000001",
+"100000001111110000000001",
+"100000001000010000000001",
+"100000001000010000000001",
+"100000001000010000000001",
+"100000001111110000000001",
+"100000000000000000000001",
+"100000000000000000000001",
+"100000000000000000000001",
+"100000000000000000000001",
+"100000000000000000000001",
+"100000000000000000000001",
+"100000000000000000000001",
+"100000000000000000000001",
+"100000000000000000000001",
+"111111111111111111111111"];
 const FOV=Math.PI/3,NUM_RAYS=Math.min(900,innerWidth);
-const p={x:2.5,y:2.5,z:0,vz:0,a:0,ground:true};
+const p={x:3.5,y:3.5,z:0,vz:0,a:0,ground:true};
 const EYE_HEIGHT=1.5;
 const keys={};
 addEventListener("keydown",e=>{keys[e.code]=true;if(["Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.code))e.preventDefault()});
@@ -113,7 +129,7 @@ function loop(now){
  const len=Math.hypot(f,s)||1;f/=len;s/=len;
  const speed=(keys.ShiftLeft||keys.ShiftRight)?4.2:2.7;
  move((Math.cos(p.a)*f-Math.sin(p.a)*s)*speed*dt,(Math.sin(p.a)*f+Math.cos(p.a)*s)*speed*dt);
- if(keys.Space&&p.ground){p.vz=3.8;p.ground=false}
+ if(keys.Space&&p.ground){p.vz=3.2;p.ground=false}
  p.vz-=12*dt;p.z+=p.vz*dt;if(p.z<=0){p.z=0;p.vz=0;p.ground=true}
  render();
  hud.textContent="RAYCASTING ENGINE TEST\nX: "+p.x.toFixed(2)+"  Y: "+p.y.toFixed(2)+"\nZ: "+p.z.toFixed(2)+"  FPS: "+Math.round(1/dt);
