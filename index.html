@@ -56,17 +56,19 @@ function cast(angle){
 }
 function render(){
  ctx.fillStyle="#79b7e8";ctx.fillRect(0,0,W,H);
- // Raising the camera makes the world move downward on screen.
- const horizon=H/2+p.z*H*.18;
+ // Keep the ground horizon fixed. Camera height moves the projected wall
+ // downward by an amount proportional to its distance, keeping the wall rigid.
+ const horizon=H/2;
  ctx.fillStyle="#303030";
  ctx.fillRect(0,horizon,W,H-horizon);
  const rays=Math.min(NUM_RAYS,W),step=W/rays;
  for(let i=0;i<rays;i++){
   const a=p.a-FOV/2+(i/(rays-1))*FOV,hit=cast(a),corrected=hit.dist*Math.cos(a-p.a);
   const wallH=Math.min(H*3,H/(corrected*1.05));
-  const top=horizon-wallH/2;
+  const bottom=horizon+p.z*wallH;
+  const top=bottom-wallH;
   ctx.fillStyle=hit.side?"#a8a8a8":"#c8c8c8";
-  ctx.fillRect(i*step,top,step+1,wallH);
+  ctx.fillRect(i*step,top,step+1,bottom-top);
  }
  ctx.strokeStyle="#fff8";ctx.beginPath();ctx.moveTo(W/2-7,H/2);ctx.lineTo(W/2+7,H/2);ctx.moveTo(W/2,H/2-7);ctx.lineTo(W/2,H/2+7);ctx.stroke();
 }
@@ -107,7 +109,7 @@ function loop(now){
  const len=Math.hypot(f,s)||1;f/=len;s/=len;
  const speed=(keys.ShiftLeft||keys.ShiftRight)?4.2:2.7;
  move((Math.cos(p.a)*f-Math.sin(p.a)*s)*speed*dt,(Math.sin(p.a)*f+Math.cos(p.a)*s)*speed*dt);
- if(keys.Space&&p.ground){p.vz=4.7;p.ground=false}
+ if(keys.Space&&p.ground){p.vz=6.2;p.ground=false}
  p.vz-=12*dt;p.z+=p.vz*dt;if(p.z<=0){p.z=0;p.vz=0;p.ground=true}
  render();
  hud.textContent="RAYCASTING ENGINE TEST\nX: "+p.x.toFixed(2)+"  Y: "+p.y.toFixed(2)+"\nZ: "+p.z.toFixed(2)+"  FPS: "+Math.round(1/dt);
