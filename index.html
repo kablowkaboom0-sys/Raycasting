@@ -51,8 +51,7 @@ const map=[
 "100000000000000000000001",
 "100000000000000000000001",
 "100000000000000000000001",
-"111111111111111111111111"];
-const FOV=Math.PI/3,NUM_RAYS=Math.min(900,innerWidth);
+"111111111111111111111111"];\nconst FOV=Math.PI/3,NUM_RAYS=Math.min(900,innerWidth);
 const RAMP={x1:4.2,y1:2.0,x2:7.8,y2:5.0,height:1.5};
 const p={x:3.5,y:3.5,z:0,vz:0,a:0,ground:true};
 const EYE_HEIGHT=1.5;
@@ -87,33 +86,14 @@ function projectPoint(x,y,z){
  return {x:W/2+(side/depth)*(W/(2*Math.tan(FOV/2))),y:H*.51-(z-(EYE_HEIGHT+p.z))*scale};
 }
 function drawRamp(){
- const x0=4.0,x1=8.0,y0=2.2,y1=4.8,h=1.5;
- const strips=32;
- for(let i=0;i<strips;i++){
-  const a=i/strips,b=(i+1)/strips;
-  const xa=x0+(x1-x0)*a,xb=x0+(x1-x0)*b;
-  const za=h*a,zb=h*b;
-  const A=projectPoint(xa,y0,za),B=projectPoint(xb,y0,zb);
-  const C=projectPoint(xb,y1,zb),D=projectPoint(xa,y1,za);
-  if(A&&B&&C&&D){
-   ctx.fillStyle=i%2?"#d0d0d0":"#a8a8a8";
-   ctx.beginPath();ctx.moveTo(A.x,A.y);ctx.lineTo(B.x,B.y);
-   ctx.lineTo(C.x,C.y);ctx.lineTo(D.x,D.y);ctx.closePath();ctx.fill();
-   ctx.strokeStyle="#ffffff";ctx.lineWidth=1;ctx.stroke();
-  }
- }
- const a=projectPoint(x0,y0,0),b=projectPoint(x0,y1,0);
- const c=projectPoint(x0,y0,0),d=projectPoint(x1,y0,h);
- const e=projectPoint(x1,y1,h),f=projectPoint(x0,y1,0);
- if(a&&b&&d&&e){
-  ctx.fillStyle="#666";
-  ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);
-  ctx.lineTo(e.x,e.y);ctx.lineTo(d.x,d.y);ctx.closePath();ctx.fill();
- }
- if(c&&d&&e&&f){
-  ctx.strokeStyle="#ffff00";ctx.lineWidth=4;
-  ctx.beginPath();ctx.moveTo(c.x,c.y);ctx.lineTo(d.x,d.y);
-  ctx.lineTo(e.x,e.y);ctx.lineTo(f.x,f.y);ctx.closePath();ctx.stroke();
+ // Debug ramp is deliberately rendered as a huge solid wedge in front of spawn.
+ const x0=4.0,x1=8.0,y0=2.0,y1=5.0,h=1.8;
+ const A=projectPoint(x0,y0,0),B=projectPoint(x1,y0,h);
+ const C=projectPoint(x1,y1,h),D=projectPoint(x0,y1,0);
+ if(A&&B&&C&&D){
+  ctx.fillStyle="#00ff00";
+  ctx.beginPath();ctx.moveTo(A.x,A.y);ctx.lineTo(B.x,B.y);ctx.lineTo(C.x,C.y);ctx.lineTo(D.x,D.y);ctx.closePath();ctx.fill();
+  ctx.strokeStyle="#ff00ff";ctx.lineWidth=6;ctx.stroke();
  }
 }
 function render(){
