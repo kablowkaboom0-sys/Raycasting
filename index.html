@@ -72,12 +72,17 @@ function cast(angle){
  return{dist:Math.max(.001,dist),side}
 }
 function render(){
- // Backrooms-style raycasting projection with rigid vertical walls.
+ // Rigid wall projection: the wall is a vertical slice around a fixed
+ // camera horizon. Floor is a separate plane and never paints wall pixels.
  ctx.fillStyle="#79b7e8";
  ctx.fillRect(0,0,W,H);
 
- const horizon=H*.51+p.z*H*.18;
+ const horizon=H*.51 - p.z*H*.18;
  const rays=Math.min(NUM_RAYS,W),step=W/rays;
+
+ // Draw the floor first. It occupies the lower screen area only.
+ ctx.fillStyle="#303030";
+ ctx.fillRect(0,horizon,W,H-horizon);
 
  for(let x=0;x<rays;x++){
   const cameraX=(x/rays)*2-1;
@@ -85,23 +90,17 @@ function render(){
   const hit=cast(rayAngle);
   const dist=Math.max(.05,hit.dist*Math.cos(rayAngle-p.a));
 
-  // The wall is centered on the camera horizon. Both its top and bottom
-  // receive exactly the same jump translation, so it cannot hinge.
+  // Correct perspective wall height.
   const wallH=Math.min(H*4,H/(dist*.92));
+
+  // IMPORTANT: both wall edges are derived from the SAME center.
+  // Jump changes the center only; it never changes one edge independently.
   const top=Math.floor(horizon-wallH*.5);
   const bottom=Math.ceil(horizon+wallH*.5);
 
   const shade=hit.side?150:180;
   ctx.fillStyle="rgb("+shade+","+shade+","+shade+")";
   ctx.fillRect(x*step,top,step+1,Math.max(1,bottom-top));
-
-  // Floor is rendered only from the wall's bottom edge downward.
-  // It can never overwrite the lower portion of a wall.
-  const floorStart=Math.max(0,Math.min(H,bottom));
-  if(floorStart<H){
-   ctx.fillStyle="#303030";
-   ctx.fillRect(x*step,floorStart,step+1,H-floorStart);
-  }
  }
 
  ctx.strokeStyle="#fff8";
