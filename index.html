@@ -72,15 +72,18 @@ function cast(angle){
  return{dist:Math.max(.001,dist),side}
 }
 function render(){
- // Rigid wall projection: the wall is a vertical slice around a fixed
- // camera horizon. Floor is a separate plane and never paints wall pixels.
+ // True vertical wall projection: jumping changes the camera height,
+ // not the screen horizon. Both wall edges move consistently, so walls
+ // cannot appear to hinge or tilt.
  ctx.fillStyle="#79b7e8";
  ctx.fillRect(0,0,W,H);
 
- const horizon=H*.51 - p.z*H*.18;
+ const horizon=H*.51;
  const rays=Math.min(NUM_RAYS,W),step=W/rays;
+ const cameraHeight=EYE_HEIGHT+p.z;
+ const WALL_HEIGHT=2.5;
 
- // Draw the floor first. It occupies the lower screen area only.
+ // Floor is only the background behind the wall bottoms.
  ctx.fillStyle="#303030";
  ctx.fillRect(0,horizon,W,H-horizon);
 
@@ -90,13 +93,13 @@ function render(){
   const hit=cast(rayAngle);
   const dist=Math.max(.05,hit.dist*Math.cos(rayAngle-p.a));
 
-  // Correct perspective wall height.
-  const wallH=Math.min(H*4,H/(dist*.92));
+  // Perspective scale for this ray.
+  const scale=H/(dist*.92);
 
-  // IMPORTANT: both wall edges are derived from the SAME center.
-  // Jump changes the center only; it never changes one edge independently.
-  const top=Math.floor(horizon-wallH*.5);
-  const bottom=Math.ceil(horizon+wallH*.5);
+  // Project the actual floor and ceiling heights from the same camera.
+  // Ground is below the camera; ceiling is above it.
+  const bottom=Math.ceil(horizon+cameraHeight*scale);
+  const top=Math.floor(horizon-(WALL_HEIGHT-cameraHeight)*scale);
 
   const shade=hit.side?150:180;
   ctx.fillStyle="rgb("+shade+","+shade+","+shade+")";
