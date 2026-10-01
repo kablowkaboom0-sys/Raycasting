@@ -72,43 +72,38 @@ function cast(angle){
  return{dist:Math.max(.001,dist),side}
 }
 function render(){
- // Raycasting pipeline based on BACKROOMS // LEVEL 0:
- // per-column DDA, perpendicular-distance correction, and a single rigid
- // wall projection. Jumping only moves the whole projected wall vertically.
- ctx.fillStyle="#79b7e8";ctx.fillRect(0,0,W,H);
+ // Backrooms-style raycasting projection with rigid vertical walls.
+ ctx.fillStyle="#79b7e8";
+ ctx.fillRect(0,0,W,H);
 
- const baseHorizon=H*.51;
- const jumpOffset=p.z*H*.18;
- const horizon=baseHorizon+jumpOffset;
-
- ctx.fillStyle="#303030";
- ctx.fillRect(0,horizon,W,H-horizon);
-
+ const horizon=H*.51+p.z*H*.18;
  const rays=Math.min(NUM_RAYS,W),step=W/rays;
 
  for(let x=0;x<rays;x++){
   const cameraX=(x/rays)*2-1;
   const rayAngle=p.a+Math.atan(cameraX*Math.tan(FOV/2));
   const hit=cast(rayAngle);
-
-  // Same perpendicular-distance correction used by the Backrooms renderer.
   const dist=Math.max(.05,hit.dist*Math.cos(rayAngle-p.a));
 
-  // Backrooms-style wall projection: one height, one top, one bottom.
-  // The jump offset affects both edges equally, so the wall cannot hinge.
-  const wallH=Math.min(H*2,H/(dist*.92));
-  const center=horizon;
-  const top=Math.floor(center-wallH);
-  const bottom=Math.ceil(center);
+  // The wall is centered on the camera horizon. Both its top and bottom
+  // receive exactly the same jump translation, so it cannot hinge.
+  const wallH=Math.min(H*4,H/(dist*.92));
+  const top=Math.floor(horizon-wallH*.5);
+  const bottom=Math.ceil(horizon+wallH*.5);
 
-  const shade=Math.max(35,125-dist*6);
-  ctx.fillStyle=hit.side
-    ? "rgb("+Math.floor(shade*.82)+","+Math.floor(shade*.82)+","+Math.floor(shade*.82)+")"
-    : "rgb("+Math.floor(shade)+","+Math.floor(shade)+","+Math.floor(shade)+")";
-  ctx.fillRect(x*step,top,step+1,bottom-top);
+  const shade=hit.side?150:180;
+  ctx.fillStyle="rgb("+shade+","+shade+","+shade+")";
+  ctx.fillRect(x*step,top,step+1,Math.max(1,bottom-top));
+
+  // Floor is rendered only from the wall's bottom edge downward.
+  // It can never overwrite the lower portion of a wall.
+  const floorStart=Math.max(0,Math.min(H,bottom));
+  if(floorStart<H){
+   ctx.fillStyle="#303030";
+   ctx.fillRect(x*step,floorStart,step+1,H-floorStart);
+  }
  }
 
- // Center crosshair remains screen-fixed, like the Backrooms version.
  ctx.strokeStyle="#fff8";
  ctx.beginPath();
  ctx.moveTo(W/2-7,H/2);ctx.lineTo(W/2+7,H/2);
