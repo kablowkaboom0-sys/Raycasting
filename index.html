@@ -84,24 +84,29 @@ function projectPoint(x,y,z){
  if(depth<=0.05)return null;
  const side=-dx*sa+dy*ca;
  const scale=H/(depth*.92);
- return {x:W/2+side*scale*Math.tan(FOV/2),y:H*.51-(z-(EYE_HEIGHT+p.z))*scale};
+ return {x:W/2+(side/depth)*(W/(2*Math.tan(FOV/2))),y:H*.51-(z-(EYE_HEIGHT+p.z))*scale};
 }
 function drawRamp(){
- const strips=12;
+ // Large, high-contrast test ramp directly in front of the player.
+ // It is drawn in strips so the slope is unmistakable.
+ const strips=24;
  for(let i=0;i<strips;i++){
   const a=i/strips,b=(i+1)/strips;
   const xA=RAMP.x1+(RAMP.x2-RAMP.x1)*a;
   const xB=RAMP.x1+(RAMP.x2-RAMP.x1)*b;
   const zA=RAMP.height*a,zB=RAMP.height*b;
-  const pts=[
-   projectPoint(xA,RAMP.y1,zA),projectPoint(xB,RAMP.y1,zB),
-   projectPoint(xB,RAMP.y2,zB),projectPoint(xA,RAMP.y2,zA)
-  ];
-  if(pts.some(v=>!v))continue;
-  ctx.fillStyle=(i%2)?"#9a9a9a":"#858585";
-  ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);
-  for(let j=1;j<pts.length;j++)ctx.lineTo(pts[j].x,pts[j].y);
+  const p1=projectPoint(xA,RAMP.y1,zA);
+  const p2=projectPoint(xB,RAMP.y1,zB);
+  const p3=projectPoint(xB,RAMP.y2,zB);
+  const p4=projectPoint(xA,RAMP.y2,zA);
+  if(!p1||!p2||!p3||!p4)continue;
+  ctx.fillStyle=i%2?"#bbbbbb":"#888888";
+  ctx.beginPath();
+  ctx.moveTo(p1.x,p1.y);ctx.lineTo(p2.x,p2.y);
+  ctx.lineTo(p3.x,p3.y);ctx.lineTo(p4.x,p4.y);
   ctx.closePath();ctx.fill();
+  ctx.strokeStyle="#ffffff88";
+  ctx.stroke();
  }
 }
 function render(){
