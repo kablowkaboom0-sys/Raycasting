@@ -114,14 +114,33 @@ const joy=document.getElementById("joystick"),stick=document.getElementById("sti
 let joyId=null,joyX=0,joyY=0;
 function updateJoy(e){
  const r=joy.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
- let dx=e.clientX-cx,dy=e.clientY-cy,max=45,d=Math.hypot(dx,dy);
+ let dx=e.clientX-cx,dy=e.clientY-cy,max=Math.max(30,(r.width-stick.offsetWidth)/2),d=Math.hypot(dx,dy);
  if(d>max){dx=dx/d*max;dy=dy/d*max}
- joyX=dx/max;joyY=dy/max;stick.style.transform="translate("+dx+"px,"+dy+"px)";
+ joyX=dx/max;joyY=dy/max;
+ stick.style.transform="translate("+dx+"px,"+dy+"px)";
 }
-joy.addEventListener("pointerdown",e=>{joyId=e.pointerId;joy.setPointerCapture(joyId);updateJoy(e);e.preventDefault()});
-joy.addEventListener("pointermove",e=>{if(e.pointerId===joyId)updateJoy(e);e.preventDefault()});
-function endJoy(e){if(e.pointerId===joyId){joyId=null;joyX=joyY=0;stick.style.transform="translate(0,0)"}}
-joy.addEventListener("pointerup",endJoy);joy.addEventListener("pointercancel",endJoy);
+function joyStart(e){
+ joyId=e.pointerId;
+ try{joy.setPointerCapture(joyId)}catch(_){}
+ updateJoy(e);
+ e.preventDefault();
+}
+function joyMove(e){
+ if(e.pointerId!==joyId)return;
+ updateJoy(e);
+ e.preventDefault();
+}
+function endJoy(e){
+ if(e.pointerId!==joyId)return;
+ joyId=null;joyX=joyY=0;stick.style.transform="translate(0,0)";
+ e.preventDefault();
+}
+joy.addEventListener("pointerdown",joyStart,{passive:false});
+joy.addEventListener("pointermove",joyMove,{passive:false});
+joy.addEventListener("pointerup",endJoy,{passive:false});
+joy.addEventListener("pointercancel",endJoy,{passive:false});
+joy.addEventListener("lostpointercapture",()=>{joyId=null;joyX=joyY=0;stick.style.transform="translate(0,0)"});
+
 
 const look=document.getElementById("look");
 let lookId=null,lastLookX=0;
