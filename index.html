@@ -97,57 +97,68 @@ function drawRamp(){
  }
 }
 function render(){
- // True vertical wall projection: jumping changes the camera height,
- // not the screen horizon. Both wall edges move consistently, so walls
- // cannot appear to hinge or tilt.
- ctx.fillStyle="#79b7e8";
- ctx.fillRect(0,0,W,H);
-
+ // Sector-style floor test. Unlike the old overlay, every screen column
+ // samples the floor height along the ray, allowing genuine raised/sloped ground.
+ ctx.fillStyle="#79b7e8";ctx.fillRect(0,0,W,H);
  const horizon=H*.51;
+ ctx.fillStyle="#303030";ctx.fillRect(0,horizon,W,H-horizon);
+
  const rays=Math.min(NUM_RAYS,W),step=W/rays;
  const cameraHeight=EYE_HEIGHT+p.z;
- const WALL_HEIGHT=2.5;
-
- // Floor is only the background behind the wall bottoms.
- ctx.fillStyle="#303030";
- ctx.fillRect(0,horizon,W,H-horizon);
 
  for(let x=0;x<rays;x++){
   const cameraX=(x/rays)*2-1;
   const rayAngle=p.a+Math.atan(cameraX*Math.tan(FOV/2));
   const hit=cast(rayAngle);
-  const dist=Math.max(.05,hit.dist*Math.cos(rayAngle-p.a));
+  const wallDist=Math.max(.05,hit.dist*Math.cos(rayAngle-p.a));
+  const scale=H/(wallDist*.92);
 
-  // Perspective scale for this ray.
-  const scale=H/(dist*.92);
+  const wallBottom=horizon+cameraHeight*scale;
+  const wallTop=horizon-(2.5-cameraHeight)*scale;
 
-  // Project the actual floor and ceiling heights from the same camera.
-  // Ground is below the camera; ceiling is above it.
-  const bottom=Math.ceil(horizon+cameraHeight*scale);
-  const top=Math.floor(horizon-(WALL_HEIGHT-cameraHeight)*scale);
-
+  // Draw wall first.
   const shade=hit.side?150:180;
   ctx.fillStyle="rgb("+shade+","+shade+","+shade+")";
-  ctx.fillRect(x*step,top,step+1,Math.max(1,bottom-top));
+  ctx.fillRect(x*step,wallTop,step+1,Math.max(1,wallBottom-wallTop));
+
+  // Floor casting: walk forward through the visible world and project
+  // each sampled floor height. The ramp therefore becomes actual 3D ground.
+  const maxD=Math.min(hit.dist,12);
+  const samples=80;
+  for(let j=0;j<samples;j++){
+   const d0=0.15+(maxD-0.15)*(j/samples);
+   const d1=0.15+(maxD-0.15)*((j+1)/samples);
+   const wx0=p.x+Math.cos(rayAngle)*d0;
+   const wy0=p.y+Math.sin(rayAngle)*d0;
+   const wx1=p.x+Math.cos(rayAngle)*d1;
+   const wy1=p.y+Math.sin(rayAngle)*d1;
+   const z0=rampFloor(wx0,wy0);
+   const z1=rampFloor(wx1,wy1);
+   const y0=horizon-(z0-cameraHeight)*(H/(d0*.92));
+   const y1=horizon-(z1-cameraHeight)*(H/(d1*.92));
+   const top=Math.min(y0,y1);
+   const bottom=Math.max(y0,y1);
+   if(bottom>horizon-2 && top<H){
+    const shadeFloor=70+Math.max(0,Math.min(50,Math.floor(d0*3)));
+    ctx.fillStyle="rgb("+shadeFloor+","+shadeFloor+","+shadeFloor+")";
+    ctx.fillRect(x*step,Math.max(horizon-1,top),step+1,Math.max(1,bottom-top));
+   }
+  }
  }
 
- drawRamp();
-
- // Bright outline around the ramp bounds makes the test geometry obvious.
- const ra=projectPoint(RAMP.x1,RAMP.y1,0);
- const rb=projectPoint(RAMP.x2,RAMP.y1,RAMP.height);
- const rc=projectPoint(RAMP.x2,RAMP.y2,RAMP.height);
- const rd=projectPoint(RAMP.x1,RAMP.y2,0);
- if(ra&&rb&&rc&&rd){
-  ctx.strokeStyle="#ffff00";
-  ctx.lineWidth=3;
-  ctx.beginPath();
-  ctx.moveTo(ra.x,ra.y);ctx.lineTo(rb.x,rb.y);
-  ctx.lineTo(rc.x,rc.y);ctx.lineTo(rd.x,rd.y);
-  ctx.closePath();ctx.stroke();
+ // Draw a strong slope edge for debugging, but the visible surface above
+ // is now produced by floor-height projection rather than a screen overlay.
+ const A=projectPoint(RAMP.x1,RAMP.y1,0);
+ const B=projectPoint(RAMP.x2,RAMP.y1,RAMP.height);
+ const C=projectPoint(RAMP.x2,RAMP.y2,RAMP.height);
+ const D=projectPoint(RAMP.x1,RAMP.y2,0);
+ if(A&&B&&C&&D){
+  ctx.strokeStyle="#ffff00";ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(A.x,A.y);ctx.lineTo(B.x,B.y);
+  ctx.lineTo(C.x,C.y);ctx.lineTo(D.x,D.y);ctx.closePath();ctx.stroke();
  }
 
- ctx.strokeStyle="#fff8";
+ ctx.strokeStyle="#fff8";ctx.lineWidth=1;
  ctx.beginPath();
  ctx.moveTo(W/2-7,H/2);ctx.lineTo(W/2+7,H/2);
  ctx.moveTo(W/2,H/2-7);ctx.lineTo(W/2,H/2+7);
