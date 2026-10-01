@@ -53,8 +53,14 @@ const map=[
 "100000000000000000000001",
 "111111111111111111111111"];
 const FOV=Math.PI/3,NUM_RAYS=Math.min(900,innerWidth);
+const RAMP={x1:5,y1:5,x2:11,y2:8,height:1.2};
 const p={x:3.5,y:3.5,z:0,vz:0,a:0,ground:true};
 const EYE_HEIGHT=1.5;
+function rampFloor(x,y){
+ if(x>=RAMP.x1&&x<=RAMP.x2&&y>=RAMP.y1&&y<=RAMP.y2)
+  return RAMP.height*((x-RAMP.x1)/(RAMP.x2-RAMP.x1));
+ return 0;
+}
 const keys={};
 addEventListener("keydown",e=>{keys[e.code]=true;if(["Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.code))e.preventDefault()});
 addEventListener("keyup",e=>keys[e.code]=false);
@@ -168,10 +174,15 @@ function loop(now){
  const len=Math.hypot(f,s)||1;f/=len;s/=len;
  const speed=(keys.ShiftLeft||keys.ShiftRight)?4.2:2.7;
  move((Math.cos(p.a)*f-Math.sin(p.a)*s)*speed*dt,(Math.sin(p.a)*f+Math.cos(p.a)*s)*speed*dt);
+ const floorNow=rampFloor(p.x,p.y);
+ if(p.ground)p.z=floorNow;
  if(keys.Space&&p.ground){p.vz=3.8;p.ground=false}
- p.vz-=12*dt;p.z+=p.vz*dt;if(p.z<=0){p.z=0;p.vz=0;p.ground=true}
+ if(!p.ground){
+  p.vz-=12*dt;p.z+=p.vz*dt;
+  if(p.z<=floorNow){p.z=floorNow;p.vz=0;p.ground=true}
+ }
  render();
- hud.textContent="RAYCASTING ENGINE TEST\nX: "+p.x.toFixed(2)+"  Y: "+p.y.toFixed(2)+"\nZ: "+p.z.toFixed(2)+"  FPS: "+Math.round(1/dt);
+ hud.textContent="RAMP TEST\nX: "+p.x.toFixed(2)+"  Y: "+p.y.toFixed(2)+"\nGROUND: "+floorNow.toFixed(2)+"  Z: "+p.z.toFixed(2)+"  FPS: "+Math.round(1/dt);
  requestAnimationFrame(loop)
 }
 requestAnimationFrame(loop);
