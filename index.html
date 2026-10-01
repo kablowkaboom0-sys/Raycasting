@@ -53,7 +53,7 @@ const map=[
 "100000000000000000000001",
 "111111111111111111111111"];
 const FOV=Math.PI/3,NUM_RAYS=Math.min(900,innerWidth);
-const RAMP={x1:5,y1:2.4,x2:11,y2:4.8,height:1.2};
+const RAMP={x1:4.2,y1:2.0,x2:7.8,y2:5.0,height:1.5};
 const p={x:3.5,y:3.5,z:0,vz:0,a:0,ground:true};
 const EYE_HEIGHT=1.5;
 function rampFloor(x,y){
@@ -87,9 +87,9 @@ function projectPoint(x,y,z){
  return {x:W/2+(side/depth)*(W/(2*Math.tan(FOV/2))),y:H*.51-(z-(EYE_HEIGHT+p.z))*scale};
 }
 function drawRamp(){
- // Large, high-contrast test ramp directly in front of the player.
- // It is drawn in strips so the slope is unmistakable.
- const strips=24;
+ // Experimental ramp: deliberately placed close to the start so it is
+ // guaranteed to be in the player's forward view.
+ const strips=32;
  for(let i=0;i<strips;i++){
   const a=i/strips,b=(i+1)/strips;
   const xA=RAMP.x1+(RAMP.x2-RAMP.x1)*a;
@@ -105,8 +105,10 @@ function drawRamp(){
   ctx.moveTo(p1.x,p1.y);ctx.lineTo(p2.x,p2.y);
   ctx.lineTo(p3.x,p3.y);ctx.lineTo(p4.x,p4.y);
   ctx.closePath();ctx.fill();
-  ctx.strokeStyle="#ffffff88";
+  ctx.strokeStyle="#ffffff";
+  ctx.lineWidth=1;
   ctx.stroke();
+
  }
 }
 function render(){
@@ -145,6 +147,20 @@ function render(){
  }
 
  drawRamp();
+
+ // Bright outline around the ramp bounds makes the test geometry obvious.
+ const ra=projectPoint(RAMP.x1,RAMP.y1,0);
+ const rb=projectPoint(RAMP.x2,RAMP.y1,RAMP.height);
+ const rc=projectPoint(RAMP.x2,RAMP.y2,RAMP.height);
+ const rd=projectPoint(RAMP.x1,RAMP.y2,0);
+ if(ra&&rb&&rc&&rd){
+  ctx.strokeStyle="#ffff00";
+  ctx.lineWidth=3;
+  ctx.beginPath();
+  ctx.moveTo(ra.x,ra.y);ctx.lineTo(rb.x,rb.y);
+  ctx.lineTo(rc.x,rc.y);ctx.lineTo(rd.x,rd.y);
+  ctx.closePath();ctx.stroke();
+ }
 
  ctx.strokeStyle="#fff8";
  ctx.beginPath();
