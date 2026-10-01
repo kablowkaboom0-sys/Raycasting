@@ -140,8 +140,8 @@ function render(){
    const top=Math.min(y0,y1);
    const bottom=Math.max(y0,y1);
    if(bottom>horizon-2 && top<H){
-    const shadeFloor=70+Math.max(0,Math.min(50,Math.floor(d0*3)));
-    ctx.fillStyle="rgb("+shadeFloor+","+shadeFloor+","+shadeFloor+")";
+    const onRamp=(z0>0.001||z1>0.001);
+    ctx.fillStyle=onRamp?"#8b6a3e":"#303030";
     ctx.fillRect(x*step,Math.max(horizon-1,top),step+1,Math.max(1,bottom-top));
    }
   }
